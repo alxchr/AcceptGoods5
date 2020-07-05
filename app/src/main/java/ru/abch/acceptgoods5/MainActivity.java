@@ -525,9 +525,9 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
     private void processScan(String scan, String codeId) {
         if (codeId.equals("b")) {
             Log.d(TAG, "Scan code39 =" + scan);
-            if(CheckCode.checkGoods39(scan)) {
-                String goodsId = scan.substring(7).replaceAll("\\."," ");
-                String goodsQnt = scan.substring(1,7).replaceAll("\\.","");
+//            if(CheckCode.checkGoods39(scan)) {
+                String goodsId = scan.substring(1,10).replaceAll("\\."," ");
+                String goodsQnt = scan.substring(10).replaceAll("\\.","");
                 int qnt = Integer.parseInt(goodsQnt, 36);
                 Log.d(TAG, "Goods id ='" + goodsId + "' goods qnt ='" + goodsQnt + "' " + qnt);
                 gp = Database.getGoodsPositionById(goodsId);
@@ -545,9 +545,9 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                     sayAddress(gp.cell);
                     state = WAIT_CELL;
                 }
-            } else {
+/*            } else {
                 say(getResources().getString(R.string.wrong_goods));
-            }
+            }   */
         }   else processScan(scan);
     }
     private void processScan(String scan) {
