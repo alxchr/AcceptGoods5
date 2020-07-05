@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Приемка 5</string>
+
+    <string name="scan_action">Сканировать</string>
+    <string name="storeman_label">Кладовщик</string>
+    <string name="store_choice">Выберите склад</string>
+    <string name="storeman_number_tts">Введите номер кладовщика, нажмите enter</string>
+    <string name="wrong_cell">Неверный номер ячейки</string>
+    <string name="wrong_goods">Неизвестный код товара, загрузите приемку</string>
+    <string name="finish">Закончить сканирование</string>
+    <string name="output_cell">Ячейка</string>
+    <string name="goods_code">Код товара</string>
+    <string name="input_cell_label">Ящик</string>
+    <string name="upload_deferred">Сеть отключена, загрузка данных отложена</string>
+    <string name="scan_box">Выберите ящик</string>
+    <string name="scan_goods">Сканируйте товар</string>
+    <string name="scan_cell">Сканируйте ячейку</string>
+    <string name="goods_label">Товар</string>
+    <string name="qty">Количество</string>
+    <string name="placed">Размещено в ячейке</string>
+    <string name="repeat_scan">Повторное сканирование, подтвердите перемещение в другую ячейку</string>
+    <string name="yes">Да</string>
+    <string name="no">Нет</string>
+    <string name="other_cell">Другая ячейка?</string>
+    <string name="force_upload">Войдите в зону WiFi и отправьте данные</string>
+    <string name="upload">Отправить</string>
+    <string name="cell">Ячейка</string>
+    <string name="ready">Загрузка данных завершена</string>
+    <string name="qnt">Введите количество</string>
+    <string name="wrong_qnt">Недопустимое количество товара, повторите ввод</string>
+    <string name="exit">Выход</string>
+    <string name="refresh">Загрузить приемку</string>
+    <string name="settings">Настройки</string>
+    <string name="close_scan">Отменить сканирование?</string>
+    <string name="close_settings">Закрыть настройки?</string>
+    <string name="error">Ошибка!</string>
+    <string name="enter_again">Введите повторно</string>
+    <string name="dismiss">Отменить</string>
+    <string name="search">Поиск</string>
+    <string name="goods_choice">Выберите товар</string>
+    <string name="fast_scan">Быстрое сканирование</string>
+    <string name="regular_scan">Обычное сканирование</string>
+    <string name="scan_mode">Режим сканирования</string>
+    <string name="scan_goods_or_cell">Сканируйте товар или ячейку</string>
+    <string name="quantity">" штук"</string>
+    <string name="address">"Адрес "</string>
+    <string name="not_set">не задан</string>
+    <string name="cancel">Отменить</string>
+    <string name="accepted">Принято</string>
+    <string name="next">далее</string>
+    <string name="no_connection">Нет связи с сервером</string>
+</resources>

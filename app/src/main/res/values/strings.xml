@@ -1,0 +1,53 @@
+<resources>
+    <string name="app_name">Accept Goods 5</string>
+    <string name="scan_action">Scan</string>
+    <string name="storeman_label">Storeman</string>
+    <string name="store_choice">Chose store</string>
+    <string name="storeman_number_tts">Enter storeman number, press Enter</string>
+    <string name="input_cell_label">Input cell</string>
+    <string name="wrong_cell">Wrong cell number</string>
+    <string name="wrong_goods">Wrong goods code</string>
+    <string name="finish">Finish scan</string>
+    <string name="output_cell">Cell</string>
+    <string name="goods_code">Goods code</string>
+    <string name="upload_deferred">Network offline, upload deferred</string>
+    <string name="scan_box">Scan box</string>
+    <string name="scan_goods">Scan goods</string>
+    <string name="scan_cell">Scan cell</string>
+    <string name="goods_label">Goods</string>
+    <string name="qty">Quantity</string>
+    <string name="placed">Placed in cell</string>
+    <string name="repeat_scan">Repeat scan, confirm other cell</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="other_cell">Other cell?</string>
+    <string name="force_upload">Go to WiFi zone and press Upload</string>
+    <string name="upload">Upload data</string>
+    <string name="cell">Cell</string>
+    <string name="ready">Finish data download</string>
+    <string name="qnt">Enter goods quantity, press Enter</string>
+    <string name="wrong_qnt">Wrong goods quantity</string>
+    <string name="exit">Exit</string>
+    <string name="refresh">Refresh</string>
+    <string name="settings">Settings</string>
+    <string name="close_scan">Close scan?</string>
+    <string name="close_settings">Close settings?</string>
+    <string name="error">Error!</string>
+    <string name="enter_again">Enter again</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="search">Search</string>
+    <string name="goods_choice">Chose goods</string>
+    <string name="fast_scan">Fast scan</string>
+    <string name="regular_scan">Regular scan</string>
+    <string name="scan_mode">Scan mode</string>
+    <string name="scan_goods_or_cell">Scan goods or cell</string>
+    <string name="quantity">pieces</string>
+    <string name="address">Address </string>
+    <string name="not_set">Not set</string>
+    <string name="cancel">Cancel</string>
+    <string name="accepted">Accepted</string>
+    <string name="next">Next</string>
+    <string name="no_connection">No server connection</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment" translatable="false">Hello blank fragment</string>
+</resources>
