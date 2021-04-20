@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
     <string-array name="store_names">
         <item>Кулибина 3                                        </item>
         <item>Рылеева 18                                        </item>
@@ -17,5 +16,7 @@
         <item>Уфа Тест                                          </item>
         <item>Троицкий тракт - Торговый зал                     </item>
         <item>Пермь Грузовой сервис                             </item>
+        <item>Иркутск                                           </item>
+        <item>Мирный 31 км.                                     </item>
     </string-array>
 </resources>

@@ -51,4 +51,8 @@
     <string name="accepted">Принято</string>
     <string name="next">далее</string>
     <string name="no_connection">Нет связи с сервером</string>
+    <string name="to_accept">К приемке</string>
+    <string name="accepted_to_cell">" принято на ячейку "</string>
+    <string name="accepted_of">" из "</string>
+    <string name="have_scanned_cell">Ячейка отсканирована</string>
 </resources>

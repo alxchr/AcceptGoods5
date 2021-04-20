@@ -4,9 +4,17 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     tools:context=".MainActivity"
-    android:weightSum="13"
+    android:weightSum="15"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
+    <TextView
+        android:id="@+id/tvHistory"
+        android:layout_weight="1.5"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:maxLines="2"
+        android:textSize="16sp"
+        />
     <TextView
         android:id="@+id/tvStore"
         android:layout_weight="1"
@@ -69,9 +77,9 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="0sp"
-        android:textSize="20sp"
+        android:textSize="16sp"
         android:id="@+id/tvDescription"
-        android:layout_weight="2" />
+        android:layout_weight="1.5" />
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -87,14 +95,33 @@
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:textSize="32sp"
+            android:textSize="28sp"
             android:id="@+id/tvCell"
             android:layout_weight="4" />
     </LinearLayout>
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1.5"
+        android:layout_weight="0.8"
+        android:weightSum="3"
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textSize="20sp"
+            android:text="@string/to_accept"
+            android:layout_weight="2" />
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textSize="20sp"
+            android:id="@+id/tvToAccept"
+            android:layout_weight="1" />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1.7"
         android:weightSum="3"
         android:orientation="horizontal">
         <TextView
@@ -107,7 +134,7 @@
             android:layout_width="0dp"
             android:enabled="false"
             android:layout_height="wrap_content"
-            android:textSize="32sp"
+            android:textSize="28sp"
             android:id="@+id/etQty"
             android:layout_weight="1" />
     </LinearLayout>

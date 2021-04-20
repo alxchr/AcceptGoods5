@@ -37,7 +37,7 @@ public class App extends Application {
         FL.init(new FLConfig.Builder(this)
                 .minLevel(FLConst.Level.V)
                 .logToFile(true)
-                .dir(new File(Environment.getExternalStorageDirectory(), "AcceptGoods4"))
+                .dir(new File(Environment.getExternalStorageDirectory(), "AcceptGoods5"))
                 .retentionPolicy(FLConst.RetentionPolicy.FILE_COUNT)
                 .build());
         FL.setEnabled(true);

@@ -7,8 +7,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.media.Ringtone;
-import android.media.RingtoneManager;
+import android.media.AudioManager;
+import android.media.SoundPool;
 import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -78,7 +78,7 @@ import okhttp3.Response;
 
 import static org.apache.http.conn.ssl.SSLSocketFactory.SSL;
 
-public class MainActivity extends AppCompatActivity implements TextToSpeech.OnInitListener{
+public class MainActivity extends AppCompatActivity implements TextToSpeech.OnInitListener, SoundPool.OnLoadCompleteListener {
     AlertDialog.Builder adbSettings, adbError, adbUpload,  ad, adScan, adbGoods;
     private static String TAG = "MainActivity";
     private static final int REQ_PERMISSION = 1233;
@@ -86,25 +86,25 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
     TextView tvStore;
     static  EditText etStoreMan;
     String sStoreMan;
-    static int storeMan;
-    TextView  tvPrompt, tvBoxLabel, tvDescription, tvCell, tvGoods;
+    static int storeMan = -1;
+    TextView  tvPrompt, tvBoxLabel, tvDescription, tvCell, tvGoods, tvHistory, tvToAccept;
     EditText etScan, etQnt;
     private String input;
     private final int WAIT_QNT = 0, ERROR = 1, WAIT_GOODS_CODE = 2, WAIT_GOODS_BARCODE = 3, WAIT_CELL = 4;
-    private int state = WAIT_GOODS_BARCODE;
+    private int state = ERROR;
     private boolean scanPressed = false, fastMode = false;
-
+    final int MAX_STREAMS = 5;
     ConnectivityManager cm;
     final static String CONNECTIVITY_ACTION = "android.net.conn.CONNECTIVITY_CHANGE";
     IntentFilter intentFilter;
     public static boolean online = false;
     final String[] ids = new String[] {"     2   ", "     JCTR", "    10SSR", "    12SPR", "    1ASPR", "    1BSPR", "    1ISPR", "    1LSPR",
-    "    1OSPR", "    1PSPR", "    1CSPR", "    1SSPR", "    1USPR", "    15SPR", "    1TSPR"};
+            "    1OSPR", "    1PSPR", "    1CSPR", "    1SSPR", "    1USPR", "    15SPR", "    1TSPR", "    28SPR", "    27SPR"};
     int qnt;
     GoodsPosition gp = null, prevGP = null;
     String cell, sQnt = "", sScan = "";
     Button btCancel;
-    final String[] storeCode = new String[] {"1908","1909","1907","1901","1900","1902","1906","1904","1903","1905","1900","1900","1900","1900","1900"};
+    final String[] storeCode = new String[] {"1908","1909","1907","1901","1900","1902","1906","1904","1903","1905","1900","1900","1900","1910","1900","1911","1912"};
     String[] names;
     static ProgressBar pbbar;
     private static final String ACTION_BARCODE_DATA = "com.honeywell.sample.action.BARCODE_DATA";
@@ -122,6 +122,10 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
     PostWebservice postWS;
     private Timer mTimer;
     private OfflineTimerTask offlineTimerTask;
+    SoundPool soundPool;
+    int soundId1;
+    int toAccept;
+    String history = null;
     private BroadcastReceiver barcodeDataReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -155,7 +159,8 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                                     "Timestamp:%s\n",
                             data, charset, dataBytesStr, aimId, codeId, timestamp);
                     Log.d(TAG, "Honeywell scanned:" + text);
-                    processScan(data,codeId);
+                    FL.d(TAG, "Scanned=" + data + " codeId=" + codeId);
+                    processScan(data, codeId);
                 }
             }
         }
@@ -243,6 +248,7 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
 //        setContentView(R.layout.activity_one);
         setContentView(R.layout.activity_main);
         try {
@@ -297,6 +303,7 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
 
         if(App.getStoreMan() > 0 ) {
             etStoreMan.setText(String.valueOf(App.getStoreMan()));
+            storeMan = App.getStoreMan();
         }
         etStoreMan.setOnKeyListener(new View.OnKeyListener() {
             @Override
@@ -318,6 +325,7 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                         etScan.requestFocus();
                         etScan.getText().clear();
                         tvPrompt.setText(getResources().getString(R.string.scan_goods));
+                        state = WAIT_GOODS_BARCODE;
                         refreshData();
                     }
                 }
@@ -454,13 +462,28 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                         gp.setQnt(qnt);
                         gp.setCell(cell);
                         gp.setTime(getCurrentTime());
+                        if (qnt == toAccept) {
+                            notification();
+                        } else {
+                            sayAccepted(qnt, toAccept);
+                        }
                         pushGP(gp);
+                        Database.updateTotal(gp.id,toAccept-qnt);
+                        int gap1 = tvDescription.getText().toString().indexOf(" ");
+                        if (gap1 == -1) {
+                            history = tvDescription.getText().toString();
+                        } else {
+                            history = tvDescription.getText().toString().substring(0, gap1);
+                        }
+                        history += " " + gp.article + getResources().getString(R.string.accepted_to_cell) + Config.formatCell(gp.cell) + " " + getResources().getString(R.string.qty) + " " + qnt + " из " + toAccept;
+                        tvHistory.setText(history);
                         etQnt.setText("");
                         etScan.setText("");
                         tvCell.setText("");
                         tvDescription.setText("");
                         tvPrompt.setText(getResources().getString(R.string.scan_goods));
                         tvGoods.setText("");
+                        tvToAccept.setText("");
                     } else {
                         etQnt.getText().clear();
                         say(getResources().getString(R.string.wrong_qnt));
@@ -518,14 +541,57 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                 cancel();
             }
         });
+        soundPool= new SoundPool(MAX_STREAMS, AudioManager.STREAM_MUSIC, 0);
+        soundPool.setOnLoadCompleteListener(this);
+        soundId1 = soundPool.load(this, R.raw.pik, 1);
+        tvHistory = findViewById(R.id.tvHistory);
+        tvToAccept  = findViewById(R.id.tvToAccept);
     }   //end onCreate
     public static void say(String text) {
         if (Config.tts) mTTS.speak(text, TextToSpeech.QUEUE_ADD, null, null);
     }
     private void processScan(String scan, String codeId) {
+        if(state == ERROR) {
+            say(getResources().getString(R.string.storeman_number_tts));
+        } else
+        if (codeId.equals("c") && scan.length() == 11) {
+            Log.d(TAG, "Scan UPC =" + scan);
+            //Rebuild UPC check digit
+            String res = scan;
+            int[] resDigit = new int[11];
+            for (int i = 0; i < 11; i++) {
+                resDigit[i] = Integer.parseInt(res.substring(i, i + 1));
+            }
+            int e = resDigit[1] + resDigit[3] + resDigit[5] + resDigit[7] + resDigit[9];
+            int o = resDigit[0] + resDigit[2] + resDigit[4] + resDigit[6] + resDigit[8] + resDigit[10];
+            o *= 3;
+            String r = String.valueOf(o + e);
+            int c = 10 - Integer.parseInt(r.substring(r.length() - 1));
+            if (c == 10) c = 0;
+            res = res + c;
+            Log.d(TAG, "Rebuilt UPC code =" + res);
+            processScan(res);
+        } else
+        if (codeId.equals("d")  && scan.length() == 12) {
+            Log.d(TAG, "Scan EAN13 =" + scan);
+            //Rebuild EAN13 check digit
+            String res = scan;
+            int[] resDigit = new int[12];
+            for (int i = 0; i < 12; i++) {
+                resDigit[i] = Integer.parseInt(res.substring(i, i + 1));
+            }
+            int e = (resDigit[1] + resDigit[3] + resDigit[5] + resDigit[7] + resDigit[9] + resDigit[11]) * 3;
+            int o = resDigit[0] + resDigit[2] + resDigit[4] + resDigit[6] + resDigit[8] + resDigit[10];
+            String r = String.valueOf(o + e);
+            int c = 10 - Integer.parseInt(r.substring(r.length() - 1));
+            if (c == 10) c = 0;
+            res = res + c;
+            Log.d(TAG, "Rebuilt EAN13 code =" + res);
+            processScan(res);
+        } else
         if (codeId.equals("b")) {
             Log.d(TAG, "Scan code39 =" + scan);
-//            if(CheckCode.checkGoods39(scan)) {
+            if(CheckCode.checkGoods39(scan)) {
                 String goodsId = scan.substring(1,10).replaceAll("\\."," ");
                 String goodsQnt = scan.substring(10).replaceAll("\\.","");
                 int qnt = Integer.parseInt(goodsQnt, 36);
@@ -544,10 +610,12 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                     tvPrompt.setText(getResources().getString(R.string.scan_goods_or_cell));
                     sayAddress(gp.cell);
                     state = WAIT_CELL;
+                    toAccept = gp.total;
+                    tvToAccept.setText(String.valueOf(toAccept));
                 }
-/*            } else {
-                say(getResources().getString(R.string.wrong_goods));
-            }   */
+            } else {
+                processScan(scan);
+            }
         }   else processScan(scan);
     }
     private void processScan(String scan) {
@@ -557,7 +625,7 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
             case WAIT_GOODS_BARCODE:
                 gp = Database.getGoodsPosition(scan);
                 if (gp == null) {
-                    final GoodsPosition []searchResult = Database.searchGoods(scan);
+                    final GoodsPosition[] searchResult = Database.searchGoods(scan);
                     if (searchResult != null && searchResult.length > 0){
                         if (searchResult.length == 1) {
                             gp = searchResult[0];
@@ -570,6 +638,8 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                             tvPrompt.setText(getResources().getString(R.string.scan_cell));
                             sayAddress(gp.cell);
                             state = WAIT_CELL;
+                            toAccept = gp.total;
+                            tvToAccept.setText(String.valueOf(toAccept));
                         } else {
                             goodsDescriptions = new String[searchResult.length];
                             for (int j = 0; j < searchResult.length; j++) {
@@ -591,6 +661,8 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                                     tvPrompt.setText(getResources().getString(R.string.scan_cell));
                                     sayAddress(gp.cell);
                                     state = WAIT_CELL;
+                                    toAccept = gp.total;
+                                    tvToAccept.setText(String.valueOf(toAccept));
                                 }
                             }).create().show();
                         }
@@ -607,6 +679,8 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                     tvPrompt.setText(getResources().getString(R.string.scan_goods_or_cell));
                     sayAddress(gp.cell);
                     state = WAIT_CELL;
+                    toAccept = gp.total;
+                    tvToAccept.setText(String.valueOf(toAccept));
                 }
                 break;
             case WAIT_CELL:
@@ -627,9 +701,11 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                     int c = 10 - Integer.parseInt(r.substring(r.length() -1));
                     if (c == 10) c = 0;
                     cell = result + c;
-                    Log.d(TAG,"Manual input =" + scan + " cell =" + cell);
+                    FL.d(TAG,"Manual input =" + scan + " cell =" + cell);
                 }
                 if (CheckCode.checkCell(cell)) {
+                    String goodsMsg;
+                    /*
                     if (scan.length() == 12) {
                         String res = scan;
                         int [] resDigit = new int[12];
@@ -644,6 +720,8 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                         cell = res + c;
                         Log.d(TAG, "Cell =" + cell);
                     }
+
+                     */
                     etScan.setEnabled(false);
                     etQnt.setEnabled(true);
                     etQnt.requestFocus();
@@ -653,8 +731,15 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                     state = WAIT_QNT;
                     prevGP = gp;    //Now goods position may be pushed into DB
                     int q =  (gp.qnt == 0) ? 1 : gp.qnt;
-                    String goodsMsg = gp.description.substring(0, gp.description.indexOf(" ")) + " " + gp.article.substring(gp.article.length() - 3) +
-                            " "  + q + " "+ getResources().getString(R.string.quantity);
+                    int iGap = gp.description.indexOf(" ");
+                    int lArticle = gp.article.length();
+                    if (iGap < 0 ) {
+                        goodsMsg = gp.description + " " + gp.article.substring(lArticle <= 3 ? 0 : lArticle - 3) +
+                                " "  + q + " "+ getResources().getString(R.string.quantity);
+                    } else {
+                        goodsMsg = gp.description.substring(0, iGap) + " " + gp.article.substring(lArticle <= 3 ? 0 : lArticle - 3) +
+                                " " + q + " " + getResources().getString(R.string.quantity);
+                    }
                     say(goodsMsg);
                 } else {
                     prevGP = gp;
@@ -664,6 +749,8 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                         gp = prevGP;
                         prevGP = null;
                         state = WAIT_CELL;
+                        toAccept = gp.total;
+                        tvToAccept.setText(String.valueOf(toAccept));
                     } else {
                      /* Another box scanned & found*/
                         prevGP = null;
@@ -674,17 +761,38 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                         tvDescription.setText(gp.description);
                         tvPrompt.setText(getResources().getString(R.string.scan_goods_or_cell));
                         sayAddress(gp.cell);
+                        toAccept = gp.total;
+                        tvToAccept.setText(String.valueOf(toAccept));
                     }
                 }
                 break;
             case WAIT_QNT:
                 Log.d(TAG, "Wait qnt input, scanned =" + scan);
+                if (CheckCode.checkCell(scan)) {
+                    FL.d(TAG, "Have cell scanned " + scan);
+                    say(getResources().getString(R.string.have_scanned_cell));
+                    break;
+                }
                 if (prevGP != null) {
                     int q = (gp.qnt == 0) ? 1 : gp.qnt;
                     prevGP.setQnt(q);
                     prevGP.setCell(cell);
                     prevGP.setTime(getCurrentTime());
+                    if (qnt == toAccept) {
+                        notification();
+                    } else {
+                        sayAccepted(qnt, toAccept);
+                    }
                     pushGP(prevGP);
+                    Database.updateTotal(prevGP.id,prevGP.total-prevGP.qnt);
+                    int gap1 = tvDescription.getText().toString().indexOf(" ");
+                    if (gap1 == -1) {
+                        history = tvDescription.getText().toString();
+                    } else {
+                        history = tvDescription.getText().toString().substring(0, gap1);
+                    }
+                    history += " " + gp.article + getResources().getString(R.string.accepted_to_cell) + Config.formatCell(gp.cell) + " " + getResources().getString(R.string.qty) + " " + qnt + " из " + toAccept;
+                    tvHistory.setText(history);
                     say(getResources().getString(R.string.next));
                     prevGP = null;
                     tvCell.setText("");
@@ -712,6 +820,8 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                             tvPrompt.setText(getResources().getString(R.string.scan_cell));
                             sayAddress(gp.cell);
                             state = WAIT_CELL;
+                            toAccept = gp.total;
+                            tvToAccept.setText(String.valueOf(toAccept));
                         } else {
                             goodsDescriptions = new String[searchResult.length];
                             for (int j = 0; j < searchResult.length; j++) {
@@ -735,6 +845,8 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                                     if (addr.length() == 0) addr = getResources().getString(R.string.not_set);
                                     say(getResources().getString(R.string.address) + addr);
                                     state = WAIT_CELL;
+                                    toAccept = gp.total;
+                                    tvToAccept.setText(String.valueOf(toAccept));
                                 }
                             }).create().show();
                         }
@@ -752,7 +864,12 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                     tvPrompt.setText(getResources().getString(R.string.scan_goods_or_cell));
                     sayAddress(gp.cell);
                     state = WAIT_CELL;
+                    toAccept = gp.total;
+                    tvToAccept.setText(String.valueOf(toAccept));
                 }
+                break;
+            case ERROR:
+                say(getResources().getString(R.string.storeman_number_tts));
                 break;
             default:
                 Log.d(TAG,"WTF switch");
@@ -768,7 +885,7 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
             if (Database.addGoodsCount() > Config.maxDataCount) adbUpload.create().show();
         }
 //        notification();
-        sayAccepted(gp.qnt);
+//        sayAccepted(gp.qnt);
     }
 
     private BroadcastReceiver networkChangeReceiver = new BroadcastReceiver() {
@@ -859,6 +976,8 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
             etScan.requestFocus();
             tvPrompt.setText(getResources().getString(R.string.scan_goods_or_cell));
             sayAddress(gp.cell);
+            toAccept = q;
+            tvToAccept.setText(String.valueOf(toAccept));
         }
     }
     private void refreshData() {
@@ -907,13 +1026,7 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
     }
 
     void notification() {
-        try {
-            Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-            Ringtone r = RingtoneManager.getRingtone(getApplicationContext(), notification);
-            r.play();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        soundPool.play(soundId1, 1, 1, 0, 0, 1);
     }
     private void sayAddress(String text) {
         String addr = text;
@@ -924,6 +1037,15 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
         String text = getResources().getString(R.string.accepted) + "  " + qty + getResources().getString(R.string.quantity);
         say(text);
     }
+    private void sayAccepted(int qty, int all) {
+        String text = getResources().getString(R.string.accepted) + "  " + qty + getResources().getString(R.string.accepted_of) + all;
+        say(text);
+    }
+    @Override
+    public void onLoadComplete(SoundPool soundPool, int i, int i1) {
+        Log.d(TAG, "onLoadComplete, sampleId = " + i + ", status = " + i1);
+    }
+
     public class GetWSGoods {
         OkHttpClient client;
         String TAG = "GetWSGoods";
@@ -997,7 +1119,7 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                         if (gs.counter > 0) {
                             Database.beginTr();
                             for (int i = 0; i < gs.counter; i++) {
-                                Log.d(TAG, " " + gs.goodsRows[i].id + " " + gs.goodsRows[i].description);
+                                Log.d(TAG, " " + gs.goodsRows[i].id + " " + gs.goodsRows[i].description + " " + gs.goodsRows[i].article + " " + gs.goodsRows[i].qnt);
                                 Database.addGoods(
                                         gs.goodsRows[i].id,
                                         gs.goodsRows[i].description,
@@ -1089,7 +1211,7 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                         if (bcr.counter > 0) {
                             Database.beginTr();
                             for (int i = 0; i < bcr.counter; i++) {
-                                Log.d(TAG, " " + bcr.bc[i].goods + " " + bcr.bc[i].barcode);
+                                Log.d(TAG, " " + bcr.bc[i].goods + " " + bcr.bc[i].barcode+ " " + bcr.bc[i].qnt);
                                 Database.addBarCode(
                                         bcr.bc[i].goods,
                                         bcr.bc[i].barcode,

@@ -182,6 +182,7 @@ public class Database {
         String barcodeTable = DB_TABLE_BARCODES;
         String goodsTable = DB_TABLE_GOODS;
         String description, cell, article;
+        /*
         //  Honeywell EDA50K trims EAN-13 last digit
         if (barcode.length() == 12) {
             int [] resDigit = new int[12];
@@ -197,6 +198,7 @@ public class Database {
         }
         Log.d(TAG, "Goods position barcode =" + barCode + " scan =" + barcode);
 
+         */
         Cursor c = mDB.query( barcodeTable, null,COLUMN_BARCODE + "=?", new String[]{barCode},
                 null, null, null, null );
 /*
@@ -331,5 +333,11 @@ public class Database {
     }
     static void clearGoods() {
         mDB.delete(DB_TABLE_ADDGOODS, null, null);
+    }
+    static long updateTotal(String code, int total) {
+        String table = DB_TABLE_GOODS;
+        ContentValues cv = new ContentValues();
+        cv.put(COLUMN_QNT, total);
+        return mDB.update(table, cv, COLUMN_GOODS_CODE + "=?", new String[] {code});
     }
 }
