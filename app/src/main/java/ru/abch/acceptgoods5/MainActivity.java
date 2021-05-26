@@ -58,6 +58,7 @@ import java.util.Locale;
 import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.KeyManagerFactory;
@@ -126,6 +127,7 @@ public class MainActivity extends AppCompatActivity implements TextToSpeech.OnIn
     int soundId1;
     int toAccept;
     String history = null;
+    boolean barcodesRequest = false, goodsRequest = false;
     private BroadcastReceiver barcodeDataReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -421,6 +423,7 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
         tvGoods = findViewById(R.id.tvGoods);
         etQnt = findViewById(R.id.etQty);
         tvPrompt = findViewById(R.id.tvPrompt);
+        tvPrompt.setTextColor(getResources().getColor(R.color.purple_500));
         tvDescription = findViewById(R.id.tvDescription);
         refreshData();
         etQnt.setOnKeyListener(new View.OnKeyListener() {
@@ -458,7 +461,7 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                         etScan.setEnabled(true);
                         etScan.requestFocus();
                         etScan.getText().clear();
-                        state = WAIT_GOODS_BARCODE;
+                        state = WAIT_GOODS_BARCODE; //go down
                         gp.setQnt(qnt);
                         gp.setCell(cell);
                         gp.setTime(getCurrentTime());
@@ -809,6 +812,7 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                     final GoodsPosition []searchResult = Database.searchGoods(scan);
                     if (searchResult != null && searchResult.length > 0){
                         if (searchResult.length == 1) {
+                            Log.d(TAG, "Goods position " + gp.getId());
                             gp = searchResult[0];
                             qnt = gp.qnt;
                             int q = (gp.qnt == 0) ? 1 : gp.qnt;
@@ -877,12 +881,11 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
         }
     }
     void pushGP(GoodsPosition gp) {
+        Database.addAcceptGoods(storeMan, gp.id, gp.barcode, gp.qnt, gp.cell, getCurrentTime());
+        FL.d(TAG, "Sent to local DB");
+        if (Database.addGoodsCount() > Config.maxDataCount) adbUpload.create().show();
         if (online) {
-            uploadGoodsPosition(gp);
-        } else {
-            Database.addAcceptGoods(storeMan, gp.id, gp.barcode, gp.qnt, gp.cell, getCurrentTime());
-            FL.d(TAG, "Sent to local DB");
-            if (Database.addGoodsCount() > Config.maxDataCount) adbUpload.create().show();
+            uploadGoods();
         }
 //        notification();
 //        sayAccepted(gp.qnt);
@@ -967,7 +970,7 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
         }
         if (state == WAIT_QNT) {
             state = WAIT_CELL;
-            tvPrompt.setText(getResources().getString(R.string.scan_cell));
+//            tvPrompt.setText(getResources().getString(R.string.scan_cell));
             tvCell.setText(gp.cell);
             int q = (gp.qnt == 0) ? 1 : gp.qnt;
             etQnt.setText(String.valueOf(q));
@@ -976,7 +979,8 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
             etScan.requestFocus();
             tvPrompt.setText(getResources().getString(R.string.scan_goods_or_cell));
             sayAddress(gp.cell);
-            toAccept = q;
+//            toAccept = q;
+            toAccept = gp.total;
             tvToAccept.setText(String.valueOf(toAccept));
         }
     }
@@ -985,8 +989,12 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
         getBarCodes = new GetWSBarcodes();
         Database.clearData();
         try {
+            pbbar.setVisibility(View.VISIBLE);
+            tvPrompt.setVisibility(View.GONE);
             getGoods.run(goodsURL);
             getBarCodes.run(barcodesURL);
+            goodsRequest = true;
+            barcodesRequest = true;
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -1094,6 +1102,9 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                 final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
                 if (url.contains("https:")) {
                     client = new OkHttpClient.Builder().sslSocketFactory(sslSocketFactory, (X509TrustManager) trustAllCerts[0])
+                            .connectTimeout(30, TimeUnit.SECONDS)
+                            .writeTimeout(30, TimeUnit.SECONDS)
+                            .readTimeout(120, TimeUnit.SECONDS)
                             .hostnameVerifier(new HostnameVerifier() {
                                 @Override
                                 public boolean verify(String hostname, SSLSession session) {
@@ -1101,7 +1112,11 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                                 }
                             })
                             .build();
-                } else client = new OkHttpClient();
+                } else client = new OkHttpClient.Builder()
+                        .connectTimeout(30, TimeUnit.SECONDS)
+                        .writeTimeout(30, TimeUnit.SECONDS)
+                        .readTimeout(120, TimeUnit.SECONDS)
+                        .build();
             } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException | IOException | UnrecoverableKeyException | KeyManagementException e) {
                 e.printStackTrace();
             }
@@ -1119,7 +1134,7 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                         if (gs.counter > 0) {
                             Database.beginTr();
                             for (int i = 0; i < gs.counter; i++) {
-                                Log.d(TAG, " " + gs.goodsRows[i].id + " " + gs.goodsRows[i].description + " " + gs.goodsRows[i].article + " " + gs.goodsRows[i].qnt);
+//                                Log.d(TAG, " " + gs.goodsRows[i].id + " " + gs.goodsRows[i].description + " " + gs.goodsRows[i].article + " " + gs.goodsRows[i].qnt);
                                 Database.addGoods(
                                         gs.goodsRows[i].id,
                                         gs.goodsRows[i].description,
@@ -1131,6 +1146,8 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                             Database.endTr();
                         }
                     }
+                    goodsRequest = false;
+                    if (!barcodesRequest) runOnUiThread(endProgress);
                 }
 
                 public void onFailure(Call call, IOException e) {
@@ -1186,6 +1203,9 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                 final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
                 if (url.contains("https:")) {
                     client = new OkHttpClient.Builder().sslSocketFactory(sslSocketFactory, (X509TrustManager) trustAllCerts[0])
+                            .connectTimeout(30, TimeUnit.SECONDS)
+                            .writeTimeout(30, TimeUnit.SECONDS)
+                            .readTimeout(60, TimeUnit.SECONDS)
                             .hostnameVerifier(new HostnameVerifier() {
                                 @Override
                                 public boolean verify(String hostname, SSLSession session) {
@@ -1193,7 +1213,11 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                                 }
                             })
                             .build();
-                } else client = new OkHttpClient();
+                } else client = new OkHttpClient.Builder()
+                        .connectTimeout(30, TimeUnit.SECONDS)
+                        .writeTimeout(30, TimeUnit.SECONDS)
+                        .readTimeout(60, TimeUnit.SECONDS)
+                        .build();
             } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException | IOException | UnrecoverableKeyException | KeyManagementException e) {
                 e.printStackTrace();
             }
@@ -1211,7 +1235,7 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                         if (bcr.counter > 0) {
                             Database.beginTr();
                             for (int i = 0; i < bcr.counter; i++) {
-                                Log.d(TAG, " " + bcr.bc[i].goods + " " + bcr.bc[i].barcode+ " " + bcr.bc[i].qnt);
+//                                Log.d(TAG, " " + bcr.bc[i].goods + " " + bcr.bc[i].barcode+ " " + bcr.bc[i].qnt);
                                 Database.addBarCode(
                                         bcr.bc[i].goods,
                                         bcr.bc[i].barcode,
@@ -1221,8 +1245,9 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
                             Database.endTr();
                         }
                     }
+                    barcodesRequest = false;
+                    if (!goodsRequest) runOnUiThread(endProgress);
                 }
-
                 public void onFailure(Call call, IOException e) {
                     Log.d(TAG, e.getMessage());
                 }
@@ -1234,6 +1259,7 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
         OkHttpClient client;
         String TAG = "PostWebService";
         void post(String url, String json) throws IOException {
+            Log.d(TAG, "\n\r" +json + "\n\r");
             RequestBody body = RequestBody.create(json, JSON);
             Request request = new Request.Builder()
                     .url(url)
@@ -1319,6 +1345,13 @@ Honeywell Android Data Collection Intent APIAPI DOCUMENTATION
         public void run() {
             adbUpload.create().show();
             say(getResources().getString(R.string.force_upload));
+        }
+    };
+    Runnable endProgress = new Runnable() {
+        @Override
+        public void run() {
+            pbbar.setVisibility(View.GONE);
+            tvPrompt.setVisibility(View.VISIBLE);
         }
     };
 }

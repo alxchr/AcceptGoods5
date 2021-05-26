@@ -14,7 +14,7 @@ import java.util.Arrays;
 public class Database {
     private static  String TAG = "Database";
     private static final String DB_NAME = "goodsdb";
-    private static final int DB_VERSION = 3;
+    private static final int DB_VERSION = 4;
     private static final String DB_TABLE_MOVEGOODS = "movegoods";
     private static final String DB_TABLE_BARCODES = "barcodes";
     private static final String DB_TABLE_GOODS = "goods";
@@ -33,7 +33,8 @@ public class Database {
     private static final String COLUMN_BARCODE  = "barcode";
     private static final String COLUMN_GOODS_DESC = "goods_desc";
     private static final String COLUMN_GOODS_ARTICLE = "goods_article";
-
+    private static final String COLUMN_SENT  = "sent";
+    private static final String COLUMN_STORE = "store";
     private static final String DB_CREATE_MOVEGOODS =
             "create table " + DB_TABLE_MOVEGOODS + "(" +
                     COLUMN_ID + " integer primary key autoincrement, " +
@@ -67,7 +68,9 @@ public class Database {
                     COLUMN_BARCODE + " text not null, " +
                     COLUMN_QNT + " integer, " +
                     COLUMN_INPUT_CELL + " text, " +
-                    COLUMN_MOVEGOODS_SCAN_TIME + " text " +
+                    COLUMN_MOVEGOODS_SCAN_TIME + " text, " +
+                    COLUMN_SENT + " integer, " +
+                    COLUMN_STORE + " text not null " +
                     ");";
     private final Context mCtx;
     private DBHelper mDBHelper;
@@ -248,6 +251,8 @@ public class Database {
         cv.put(COLUMN_QNT, qnt);
         cv.put(COLUMN_INPUT_CELL, cell);
         cv.put(COLUMN_MOVEGOODS_SCAN_TIME, datetime);
+        cv.put(COLUMN_STORE, App.getStoreId());
+        cv.put(COLUMN_SENT, 0);
         try {
             ret = mDB.insert(DB_TABLE_ADDGOODS, null, cv);
         }  catch (SQLiteException ex) {
@@ -309,10 +314,12 @@ public class Database {
                 description = "";
                 barcode = "";
                 cell = c.getString(5);
-                article = c.getString(3);
+                article = "";
                 total = c.getInt(4);
                 GoodsPosition gp = new GoodsPosition(goodsCode, barcode, description, cell, total, article, total);
                 gp.time = c.getString(6);
+                gp.rowId = c.getLong(0);
+                gp.store = c.getString(8);
                 ret[i] = gp;
                 c.moveToNext();
             }
@@ -332,7 +339,12 @@ public class Database {
         mDB.endTransaction();
     }
     static void clearGoods() {
-        mDB.delete(DB_TABLE_ADDGOODS, null, null);
+        mDB.delete(DB_TABLE_ADDGOODS, COLUMN_SENT + " = 0", null);
+    }
+    static int setGoodsSent(long rowId) {
+        ContentValues cv = new ContentValues();
+        cv.put(COLUMN_SENT, 1);
+        return mDB.update(DB_TABLE_ADDGOODS,cv,COLUMN_ID + " = ?", new String[]{String.valueOf(rowId)});
     }
     static long updateTotal(String code, int total) {
         String table = DB_TABLE_GOODS;

@@ -143,9 +143,10 @@
         android:layout_height="0sp"
         android:id="@+id/tvPrompt"
         android:layout_weight="1"
-        android:textSize="24sp"
+        android:textSize="20sp"
         android:textAlignment="center"/>
     <ProgressBar
+        android:layout_weight="1"
         android:visibility="gone"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
