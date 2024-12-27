@@ -9,4 +9,5 @@ class GoodsResult {
         this.counter = counter;
         this.Goods = null;
     }
+    public int storeman;
 }

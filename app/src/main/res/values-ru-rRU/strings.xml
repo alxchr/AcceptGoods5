@@ -2,7 +2,7 @@
 <resources>
 
     <string name="app_name">Приемка 5</string>
-
+    <string name="finish_accept">Закончить приемку</string>
     <string name="scan_action">Сканировать</string>
     <string name="storeman_label">Кладовщик</string>
     <string name="store_choice">Выберите склад</string>
@@ -32,7 +32,7 @@
     <string name="wrong_qnt">Недопустимое количество товара, повторите ввод</string>
     <string name="exit">Выход</string>
     <string name="refresh">Загрузить приемку</string>
-    <string name="settings">Настройки</string>
+    <string name="settings">Склад</string>
     <string name="close_scan">Отменить сканирование?</string>
     <string name="close_settings">Закрыть настройки?</string>
     <string name="error">Ошибка!</string>
@@ -55,4 +55,26 @@
     <string name="accepted_to_cell">" принято на ячейку "</string>
     <string name="accepted_of">" из "</string>
     <string name="have_scanned_cell">Ячейка отсканирована</string>
+    <string name="dct_num">Номер ТСД</string>
+    <string name="clear_data">Очистить счетчики</string>
+    <string name="device_id">Идентификатор устройства</string>
+    <string name="sd_card_error">Ошибка записи на карту SD</string>
+    <string name="no_sd_card">Установите карту SD</string>
+    <string name="new_version">Обновите программу!</string>
+    <string name="edit_data">Редактировать количество?</string>
+    <string name="clear">Стереть</string>
+    <string name="to_send">"К выгрузке "</string>
+    <string name="positions">" позиций"</string>
+    <string name="printer">Принтер</string>
+    <string name="print_label">Этикетка</string>
+    <string name="printer_choice">Выберите принтер</string>
+    <string name="adb_label">Печать этикетки</string>
+    <string name="qnt_labels">Количество этикеток</string>
+    <string name="goods_in_label">Количество на этикетке</string>
+    <string name="price_label">Ценник</string>
+    <string name="price_disclaimer1">Уточните цену</string>
+    <string name="price_disclaimer2">на терминале</string>
+    <string name="price_label2">Цена</string>
+    <string name="enterprise">Сервер</string>
+    <string name="comtt">Комтранс</string>
 </resources>

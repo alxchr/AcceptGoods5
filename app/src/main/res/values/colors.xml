@@ -4,4 +4,8 @@
     <color name="colorPrimaryDark">#3700B3</color>
     <color name="colorAccent">#03DAC5</color>
     <color name="purple_500">#FF6200EE</color>
+    <color name="color_cell">#2f00ffff</color>
+    <color name="color_goods">#2fff00ff</color>
+    <color name="color_qty">#2fffff00</color>
+    <color name="color_white">#1fffffff</color>
 </resources>

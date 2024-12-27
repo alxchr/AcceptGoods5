@@ -7,11 +7,28 @@
         app:showAsAction="ifRoom"
         android:title="@string/refresh"  />
     <item android:id="@+id/settings_item"
-        app:showAsAction="ifRoom"
+        app:showAsAction="never"
         android:title="@string/settings"  />
-    <!--
-    <item android:id="@+id/mode_item"
+    <item android:id="@+id/dct_num_item"
+        app:showAsAction="never"
+        android:title="@string/dct_num"  />
+    <item android:id="@+id/clear_item"
+        app:showAsAction="never"
+        android:title="@string/clear_data"  />
+    <item android:id="@+id/device_item"
+        app:showAsAction="never"
+        android:title="@string/device_id"  />
+    <item
+        android:id="@+id/printer_item"
         app:showAsAction="ifRoom"
-        android:title="@string/scan_mode"  />
-        -->
+        android:title="@string/printer" />
+    <item android:id="@+id/print_price"
+        app:showAsAction="ifRoom"
+        android:title="@string/price_label"  />
+    <item android:id="@+id/print_label"
+        app:showAsAction="ifRoom"
+        android:title="@string/print_label"  />
+    <item android:id="@+id/enterprise_item"
+        app:showAsAction="never"
+        android:title="@string/enterprise"/>
 </menu>
